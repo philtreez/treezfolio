@@ -1,82 +1,38 @@
 async function setup() {
     const patchExportURL = "https://treezfolio-philtreezs-projects.vercel.app/export/patch.export.json";
 
-    // Create AudioContext
     const WAContext = window.AudioContext || window.webkitAudioContext;
     const context = new WAContext();
 
-    // Create gain node and connect it to audio output
+    document.body.addEventListener("click", () => {
+        if (context.state !== "running") {
+            context.resume().then(() => console.log("AudioContext resumed!"));
+        }
+    });
+
     const outputNode = context.createGain();
     outputNode.connect(context.destination);
     
-    // Fetch the exported patcher
     let response, patcher;
     try {
         response = await fetch(patchExportURL);
         patcher = await response.json();
-    
-        if (!window.RNBO) {
-            // Load RNBO script dynamically
-            // Note that you can skip this by knowing the RNBO version of your patch
-            // beforehand and just include it using a <script> tag
-            await loadRNBOScript(patcher.desc.meta.rnboversion);
-        }
-
+        if (!window.RNBO) await loadRNBOScript(patcher.desc.meta.rnboversion);
     } catch (err) {
-        const errorContext = {
-            error: err
-        };
-        if (response && (response.status >= 300 || response.status < 200)) {
-            errorContext.header = `Couldn't load patcher export bundle`,
-            errorContext.description = `Check app.js to see what file it's trying to load. Currently it's` +
-            ` trying to load "${patchExportURL}". If that doesn't` + 
-            ` match the name of the file you exported from RNBO, modify` + 
-            ` patchExportURL in app.js.`;
-        }
-        if (typeof guardrails === "function") {
-            guardrails(errorContext);
-        } else {
-            throw err;
-        }
+        console.error("Fehler beim Laden des RNBO-Patchers:", err);
         return;
     }
-    
-    // (Optional) Fetch the dependencies
-    let dependencies = [];
-    try {
-        const dependenciesResponse = await fetch("https://treezfolio-philtreezs-projects.vercel.app/export/dependencies.json");
-        dependencies = await dependenciesResponse.json();
 
-        // Prepend "export" to any file dependenciies
-        dependencies = dependencies.map(d => d.file ? Object.assign({}, d, { file: "export/" + d.file }) : d);
-    } catch (e) {}
-
-    // Create the device
     let device;
     try {
         device = await RNBO.createDevice({ context, patcher });
     } catch (err) {
-        if (typeof guardrails === "function") {
-            guardrails({ error: err });
-        } else {
-            throw err;
-        }
+        console.error("Fehler beim Erstellen des RNBO-Geräts:", err);
         return;
     }
 
-    // Connect the device to the web audio graph
     device.node.connect(outputNode);
-
-    // (Optional) Attach listeners to outports so you can log messages from the RNBO patcher
     attachOutports(device);
-
-    document.body.onclick = () => {
-        context.resume();
-    }
-
-    // Skip if you're not using guardrails.js
-    if (typeof guardrails === "function")
-        guardrails();
 }
 
 function loadRNBOScript(version) {
