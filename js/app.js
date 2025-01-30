@@ -104,7 +104,7 @@ function attachOutports(device) {
 
         const value = parseInt(ev.payload);
 
-        // Verhindere unnötige Updates, falls der Wert gleich bleibt
+        // Falls sich der Wert nicht ändert, tue nichts!
         if (value === lastValue) return;
         lastValue = value;
 
