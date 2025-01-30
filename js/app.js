@@ -97,28 +97,25 @@ function loadRNBOScript(version) {
 
 
 function attachOutports(device) {
-    const outports = device.outports;
-    if (outports.length < 1) return;
-
     device.messageEvent.subscribe((ev) => {
-        if (ev.tag !== "visu1") return; // Nur auf "visu1" reagieren
+        console.log("RNBO Output:", ev.tag, ev.payload); // Debugging
+        if (ev.tag !== "visu1") return;
 
-        const value = parseInt(ev.payload); // Die gesendete Zahl (0-15)
+        const value = parseInt(ev.payload);
+        console.log("visu1 Wert empfangen:", value); // Debugging
 
-        // Alle divs auf "display: none" setzen
         for (let i = 0; i < 16; i++) {
             const div = document.getElementById(`visu-${i}`);
-            if (div) {
-                div.style.display = "none";
-            }
+            if (div) div.style.display = "none";
         }
 
-        // Das entsprechende div sichtbar machen
         const activeDiv = document.getElementById(`visu-${value}`);
         if (activeDiv) {
             activeDiv.style.display = "block";
+            console.log("Aktives Div:", activeDiv.id); // Debugging
         }
     });
 }
+
 
 setup();
