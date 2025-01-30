@@ -96,26 +96,33 @@ function loadRNBOScript(version) {
 }
 
 
+let lastValue = null; // Speichert den letzten Wert
+
 function attachOutports(device) {
     device.messageEvent.subscribe((ev) => {
-        console.log("RNBO Output:", ev.tag, ev.payload); // Debugging
         if (ev.tag !== "visu1") return;
 
         const value = parseInt(ev.payload);
-        console.log("visu1 Wert empfangen:", value); // Debugging
 
+        // Verhindere unnötige Updates, falls der Wert gleich bleibt
+        if (value === lastValue) return;
+        lastValue = value;
+
+        console.log("visu1 Wert empfangen:", value);
+
+        // Alle DIVs verstecken
         for (let i = 0; i < 16; i++) {
             const div = document.getElementById(`visu-${i}`);
             if (div) div.style.display = "none";
         }
 
+        // Das aktive DIV sichtbar machen
         const activeDiv = document.getElementById(`visu-${value}`);
         if (activeDiv) {
             activeDiv.style.display = "block";
-            console.log("Aktives Div:", activeDiv.id); // Debugging
+            console.log("Aktives Div:", activeDiv.id);
         }
     });
 }
-
 
 setup();
