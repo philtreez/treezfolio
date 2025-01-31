@@ -385,9 +385,15 @@ function loadRNBOScript(version) {
 
 document.querySelectorAll(".knob").forEach((knob) => {
     let isDragging = false;
+    let lastY = 0;
+    let lastX = 0;
+    let currentAngle = -135; // Default position
 
     knob.addEventListener("mousedown", (event) => {
         isDragging = true;
+        lastY = event.clientY;
+        lastX = event.clientX;
+
         document.addEventListener("mousemove", rotateKnob);
         document.addEventListener("mouseup", () => {
             isDragging = false;
@@ -398,20 +404,20 @@ document.querySelectorAll(".knob").forEach((knob) => {
     function rotateKnob(event) {
         if (!isDragging) return;
 
-        const rect = knob.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        const deltaX = event.clientX - centerX;
-        const deltaY = event.clientY - centerY;
-        const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+        let deltaY = lastY - event.clientY; // Detect vertical movement
+        let deltaX = event.clientX - lastX; // Detect horizontal movement
 
-        // Map angle to 0-20 range (as RNBO expects)
-        const minAngle = -135;
-        const maxAngle = 135;
-        let mappedValue = Math.round(((angle - minAngle) / (maxAngle - minAngle)) * 20);
-        mappedValue = Math.max(0, Math.min(20, mappedValue)); // Clamp between 0-20
+        lastY = event.clientY; // Update last positions
+        lastX = event.clientX;
 
-        knob.style.transform = `rotate(${minAngle + (mappedValue / 20) * (maxAngle - minAngle)}deg)`;
+        let changeAmount = (deltaY + deltaX) * 0.5; // Combine horizontal + vertical input
+        currentAngle = Math.max(-135, Math.min(135, currentAngle + changeAmount)); // Clamp rotation
+
+        knob.style.transform = `rotate(${currentAngle}deg)`;
+
+        // Map to 0-20 range
+        let mappedValue = Math.round(((currentAngle + 135) / 270) * 20);
+        mappedValue = Math.max(0, Math.min(20, mappedValue));
 
         // Ensure it only affects `sli1` to `sli16`
         if (knob.id.startsWith("sli")) {
@@ -419,6 +425,17 @@ document.querySelectorAll(".knob").forEach((knob) => {
         }
     }
 });
+
+// Send values to RNBO
+function sendValueToRNBO(param, value) {
+    if (device && device.parametersById.has(param)) {
+        device.parametersById.get(param).value = value;
+        console.log(`🎛 Updated RNBO param: ${param} = ${value}`);
+    } else {
+        console.error(`❌ RNBO parameter ${param} not found!`);
+    }
+}
+
 
 // Send values to RNBO
 function sendValueToRNBO(param, value) {
