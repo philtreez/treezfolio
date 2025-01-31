@@ -383,6 +383,53 @@ function loadRNBOScript(version) {
     });
 }
 
+document.addEventListener("DOMContentLoaded", () => {
+    setup().then(({ device }) => {
+        if (device) {
+            console.log("✅ RNBO Sliders Initialized!");
+
+            // Loop through 16 sliders
+            for (let i = 1; i <= 16; i++) {
+                const slider = document.querySelector(`.slider-${i}`);
+                const thumb = document.querySelector(`.slider-thumb-${i}`);
+                const param = device.parametersById.get(`sli${i}`);
+
+                if (!slider || !param) {
+                    console.warn(`⚠️ Slider ${i} or RNBO param 'sli${i}' not found.`);
+                    continue;
+                }
+
+                // Sync Slider to RNBO value
+                slider.value = param.value; // Set initial position
+                updateSliderVisual(thumb, param.value); // Set sprite frame
+
+                // Listen to slider movement
+                slider.addEventListener("input", () => {
+                    const value = Math.round(slider.value);
+                    param.value = value; // Update RNBO
+                    updateSliderVisual(thumb, value); // Update sprite
+                    console.log(`🎛 sli${i} = ${value}`);
+                });
+
+                // Listen to RNBO value changes
+                param.changeEvent.subscribe((value) => {
+                    const intValue = Math.round(value);
+                    slider.value = intValue; // Sync UI
+                    updateSliderVisual(thumb, intValue);
+                });
+            }
+        } else {
+            console.error("❌ RNBO Device not loaded!");
+        }
+    });
+});
+
+// Function to update the sprite position
+function updateSliderVisual(thumb, value) {
+    const frameSize = 50; // Height of each sprite frame
+    thumb.style.backgroundPosition = `0px -${value * frameSize}px`; // Shift the background
+}
+
 
 let lastValue = null; // Speichert den letzten Wert
 
