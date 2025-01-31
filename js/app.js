@@ -258,12 +258,15 @@ async function setup() {
 
     device.node.connect(outputNode);
     attachOutports(device);
+    // In setup() after device creation:
+    setupChatbotWithTTS(device, context);
 }
 
 // Text zu Phoneme umwandeln mit lokalem Wörterbuch
 async function textToSpeechParams(text) {
     try {
-        const dictionary = await loadDictionary();
+        // In textToSpeechParams()
+        const dictionary = await loadDictionary() || phonemeDictionary;
         if (!dictionary) {
             console.error("❌ Wörterbuch ist leer!");
             return [];
@@ -327,8 +330,6 @@ async function sendTextToRNBO(device, text, context, isChat = true) {
             speechParam.value = speechValue;
         }, index * 150);
     });
-
-    device.node.connect(context.destination);
 }
 
 function setupChatbotWithTTS(device, context) {
