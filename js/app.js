@@ -383,51 +383,51 @@ function loadRNBOScript(version) {
     });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    setup().then(({ device }) => {
-        if (device) {
-            console.log("✅ RNBO Sliders Initialized!");
+document.querySelectorAll(".knob").forEach((knob) => {
+    let isDragging = false;
 
-            // Loop through 16 sliders
-            for (let i = 1; i <= 16; i++) {
-                const slider = document.querySelector(`.slider-${i}`);
-                const thumb = document.querySelector(`.slider-thumb-${i}`);
-                const param = device.parametersById.get(`sli${i}`);
-
-                if (!slider || !param) {
-                    console.warn(`⚠️ Slider ${i} or RNBO param 'sli${i}' not found.`);
-                    continue;
-                }
-
-                // Sync Slider to RNBO value
-                slider.value = param.value; // Set initial position
-                updateSliderVisual(thumb, param.value); // Set sprite frame
-
-                // Listen to slider movement
-                slider.addEventListener("input", () => {
-                    const value = Math.round(slider.value);
-                    param.value = value; // Update RNBO
-                    updateSliderVisual(thumb, value); // Update sprite
-                    console.log(`🎛 sli${i} = ${value}`);
-                });
-
-                // Listen to RNBO value changes
-                param.changeEvent.subscribe((value) => {
-                    const intValue = Math.round(value);
-                    slider.value = intValue; // Sync UI
-                    updateSliderVisual(thumb, intValue);
-                });
-            }
-        } else {
-            console.error("❌ RNBO Device not loaded!");
-        }
+    knob.addEventListener("mousedown", (event) => {
+        isDragging = true;
+        document.addEventListener("mousemove", rotateKnob);
+        document.addEventListener("mouseup", () => {
+            isDragging = false;
+            document.removeEventListener("mousemove", rotateKnob);
+        });
     });
+
+    function rotateKnob(event) {
+        if (!isDragging) return;
+
+        const rect = knob.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const deltaX = event.clientX - centerX;
+        const deltaY = event.clientY - centerY;
+        const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+
+        // Map angle to 0-20 range (as RNBO expects)
+        const minAngle = -135;
+        const maxAngle = 135;
+        let mappedValue = Math.round(((angle - minAngle) / (maxAngle - minAngle)) * 20);
+        mappedValue = Math.max(0, Math.min(20, mappedValue)); // Clamp between 0-20
+
+        knob.style.transform = `rotate(${minAngle + (mappedValue / 20) * (maxAngle - minAngle)}deg)`;
+
+        // Ensure it only affects `sli1` to `sli16`
+        if (knob.id.startsWith("sli")) {
+            sendValueToRNBO(knob.id, mappedValue);
+        }
+    }
 });
 
-// Function to update the sprite position
-function updateSliderVisual(thumb, value) {
-    const frameSize = 50; // Height of each sprite frame
-    thumb.style.backgroundPosition = `0px -${value * frameSize}px`; // Shift the background
+// Send values to RNBO
+function sendValueToRNBO(param, value) {
+    if (device && device.parametersById.has(param)) {
+        device.parametersById.get(param).value = value;
+        console.log(`🎛 Updated RNBO param: ${param} = ${value}`);
+    } else {
+        console.error(`❌ RNBO parameter ${param} not found!`);
+    }
 }
 
 
