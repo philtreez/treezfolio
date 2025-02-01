@@ -469,7 +469,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function updateRNBOParam(value) {
         if (window.device && device.parametersById.has("dirx")) {
-            sendValueToRNBO("dirx", value); // ✅ Use the same function for consistency
+            sendValueToRNBO("dirx", newValue); // ✅ Use the same function for consistency
         } else {
             console.error("❌ RNBO parameter 'dirx' not found!");
         }
@@ -486,7 +486,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let newValue = Math.round(clickX / stepSize);
         newValue = Math.max(0, Math.min(3, newValue)); // Keep within bounds
         moveThumb(newValue);
-        sendValueToRNBO("dirx", value);
+        sendValueToRNBO("dirx", newValue);
     });
 
     // Dragging
@@ -501,7 +501,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let newValue = Math.round(moveX / stepSize);
         newValue = Math.max(0, Math.min(3, newValue));
         moveThumb(newValue);
-        sendValueToRNBO("dirx", value);
+        sendValueToRNBO("dirx", newValue);
     });
 
     document.addEventListener("mouseup", () => {
