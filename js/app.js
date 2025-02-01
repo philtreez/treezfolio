@@ -223,15 +223,16 @@ class TrashyChatbot {
     }
 }
 
+let device; // Global RNBO device variable
+
 async function setup() {
     const patchExportURL = "https://treezfolio-philtreezs-projects.vercel.app/export/patch.export.json";
-
     const WAContext = window.AudioContext || window.webkitAudioContext;
     const context = new WAContext();
 
     document.body.addEventListener("click", () => {
         if (context.state !== "running") {
-            context.resume().then(() => console.log("AudioContext resumed!"));
+            context.resume().then(() => console.log("🔊 AudioContext resumed!"));
         }
     });
 
@@ -244,23 +245,23 @@ async function setup() {
         patcher = await response.json();
         if (!window.RNBO) await loadRNBOScript(patcher.desc.meta.rnboversion);
     } catch (err) {
-        console.error("Fehler beim Laden des RNBO-Patchers:", err);
-        return;
+        console.error("❌ Fehler beim Laden des RNBO-Patchers:", err);
+        return null;
     }
 
-    let device;
     try {
-        device = await RNBO.createDevice({ context, patcher });
+        device = await RNBO.createDevice({ context, patcher }); // ✅ Assign to global variable
+        device.node.connect(outputNode);
+        console.log("✅ RNBO WebAudio erfolgreich initialisiert!");
     } catch (err) {
-        console.error("Fehler beim Erstellen des RNBO-Geräts:", err);
-        return;
+        console.error("❌ Fehler beim Erstellen des RNBO-Geräts:", err);
+        return null;
     }
 
-    device.node.connect(outputNode);
-    attachOutports(device);
-    // In setup() after device creation:
-    setupChatbotWithTTS(device, context);
-    sendValueToRNBO(param, value)
+    attachOutports(device); // ✅ Ensures outports are attached
+    setupChatbotWithTTS(device, context); // ✅ Keeps chatbot setup
+
+    return { device, context }; // ✅ Return both to maintain behavior
 }
 
 // Text zu Phoneme umwandeln mit lokalem Wörterbuch
@@ -485,3 +486,11 @@ function attachOutports(device) {
 }
 
 setup();
+
+setup().then(({ device, context }) => {
+    if (device) {
+        console.log("✅ RNBO Device fully initialized!");
+    } else {
+        console.error("❌ RNBO setup failed!");
+    }
+});
