@@ -456,6 +456,58 @@ buttonIDs.forEach(id => {
     });
 });
 
+document.addEventListener("DOMContentLoaded", function () {
+    const slider = document.getElementById("dirx-slider");
+    const thumb = slider.querySelector(".slider-thumb");
+
+    const sliderWidth = slider.clientWidth;
+    const thumbWidth = thumb.clientWidth;
+    const steps = 4; // 4 states (0-3)
+    const stepSize = (sliderWidth - thumbWidth) / (steps - 1); // Calculate step positions
+
+    let isDragging = false;
+
+    function updateRNBOParam(value) {
+        if (window.device && device.parametersById.get("dirx")) {
+            device.parametersById.get("dirx").value = value;
+            console.log(`📡 Sent dirx: ${value}`);
+        }
+    }
+
+    function moveThumb(value) {
+        let pos = value * stepSize;
+        thumb.style.left = `${pos}px`;
+    }
+
+    // Click to move
+    slider.addEventListener("click", (event) => {
+        let clickX = event.clientX - slider.getBoundingClientRect().left;
+        let newValue = Math.round(clickX / stepSize);
+        newValue = Math.max(0, Math.min(3, newValue)); // Keep within bounds
+        moveThumb(newValue);
+        updateRNBOParam(newValue);
+    });
+
+    // Dragging
+    thumb.addEventListener("mousedown", (event) => {
+        isDragging = true;
+        event.preventDefault();
+    });
+
+    document.addEventListener("mousemove", (event) => {
+        if (!isDragging) return;
+        let moveX = event.clientX - slider.getBoundingClientRect().left;
+        let newValue = Math.round(moveX / stepSize);
+        newValue = Math.max(0, Math.min(3, newValue));
+        moveThumb(newValue);
+        updateRNBOParam(newValue);
+    });
+
+    document.addEventListener("mouseup", () => {
+        isDragging = false;
+    });
+});
+
 let lastValue = null; // Speichert den letzten Wert
 
 function attachOutports(device) {
