@@ -260,6 +260,7 @@ async function setup() {
     attachOutports(device);
     // In setup() after device creation:
     setupChatbotWithTTS(device, context);
+    sendValueToRNBO(param, value)
 }
 
 // Text zu Phoneme umwandeln mit lokalem Wörterbuch
