@@ -250,18 +250,73 @@ async function setup() {
     }
 
     try {
-        device = await RNBO.createDevice({ context, patcher }); // ✅ Assign to global variable
+        device = await RNBO.createDevice({ context, patcher });
         device.node.connect(outputNode);
         console.log("✅ RNBO WebAudio erfolgreich initialisiert!");
+
+        setupOscilloscope(context, device, outputNode); // ✅ Add Oscilloscope Here
+
     } catch (err) {
         console.error("❌ Fehler beim Erstellen des RNBO-Geräts:", err);
         return null;
     }
 
-    attachOutports(device); // ✅ Ensures outports are attached
-    setupChatbotWithTTS(device, context); // ✅ Keeps chatbot setup
+    attachOutports(device);
+    setupChatbotWithTTS(device, context);
 
-    return { device, context }; // ✅ Return both to maintain behavior
+    return { device, context };
+}
+
+
+function setupOscilloscope(context, device, outputNode) {
+    const analyserNode = context.createAnalyser();
+    analyserNode.fftSize = 2048; // Higher = smoother, but more CPU usage
+    const bufferLength = analyserNode.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    device.node.connect(analyserNode); // ✅ Connect RNBO to Analyser
+    analyserNode.connect(outputNode); // ✅ Connect Analyser to Output
+
+    const oscilloscopeCanvas = document.getElementById('oscilloscope');
+    if (!oscilloscopeCanvas) {
+        console.error("❌ Oscilloscope canvas not found!");
+        return;
+    }
+    
+    oscilloscopeCanvas.width = oscilloscopeCanvas.offsetWidth;
+    oscilloscopeCanvas.height = 65;
+    const oscilloscopeContext = oscilloscopeCanvas.getContext("2d");
+
+    function drawOscilloscope() {
+        requestAnimationFrame(drawOscilloscope);
+        analyserNode.getByteTimeDomainData(dataArray);
+
+        oscilloscopeContext.clearRect(0, 0, oscilloscopeCanvas.width, oscilloscopeCanvas.height);
+        oscilloscopeContext.lineWidth = 3;
+        oscilloscopeContext.strokeStyle = "rgb(0, 255, 130)"; // Green waveform
+        oscilloscopeContext.beginPath();
+
+        const sliceWidth = oscilloscopeCanvas.width / bufferLength;
+        let x = 0;
+
+        for (let i = 0; i < bufferLength; i++) {
+            const v = dataArray[i] / 128.0;
+            const y = (v * oscilloscopeCanvas.height) / 2;
+
+            if (i === 0) {
+                oscilloscopeContext.moveTo(x, y);
+            } else {
+                oscilloscopeContext.lineTo(x, y);
+            }
+
+            x += sliceWidth;
+        }
+
+        oscilloscopeContext.lineTo(oscilloscopeCanvas.width, oscilloscopeCanvas.height / 2);
+        oscilloscopeContext.stroke();
+    }
+
+    drawOscilloscope(); // Start rendering
 }
 
 // Text zu Phoneme umwandeln mit lokalem Wörterbuch
