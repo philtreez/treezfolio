@@ -388,7 +388,7 @@ document.querySelectorAll(".knob").forEach((knob) => {
     let lastY = 0;
     let lastX = 0;
     let currentAngle = -135; // Default position
-    const sensitivity = 0.8; // Adjust sensitivity (higher = faster response)
+    const sensitivity = 1.0; // Adjust sensitivity (higher = faster response)
 
     knob.addEventListener("mousedown", (event) => {
         isDragging = true;
@@ -438,27 +438,21 @@ function sendValueToRNBO(param, value) {
 }
 
 
-// Send values to RNBO
-function sendValueToRNBO(param, value) {
-    if (device && device.parametersById.has(param)) {
-        device.parametersById.get(param).value = value;
-        console.log(`🎛 Updated RNBO param: ${param} = ${value}`);
-    } else {
-        console.error(`❌ RNBO parameter ${param} not found!`);
+const buttonIDs = ["fwd", "bwd", "fbw", "rndm"];
+
+buttonIDs.forEach(id => {
+    const button = document.getElementById(id);
+    if (!button) {
+        console.error(`❌ Button with ID "${id}" not found!`);
+        return;
     }
-}
 
-
-// Send values to RNBO
-function sendValueToRNBO(param, value) {
-    if (device && device.parametersById.has(param)) {
-        device.parametersById.get(param).value = value;
-        console.log(`🎛 Updated RNBO param: ${param} = ${value}`);
-    } else {
-        console.error(`❌ RNBO parameter ${param} not found!`);
-    }
-}
-
+    button.addEventListener("click", () => {
+        const isActive = button.classList.toggle("active"); // Toggle state
+        const newValue = isActive ? 1 : 0; // ON = 1, OFF = 0
+        sendValueToRNBO(id, newValue);
+    });
+});
 
 let lastValue = null; // Speichert den letzten Wert
 
