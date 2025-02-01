@@ -388,6 +388,7 @@ document.querySelectorAll(".knob").forEach((knob) => {
     let lastY = 0;
     let lastX = 0;
     let currentAngle = -135; // Default position
+    const sensitivity = 0.8; // Adjust sensitivity (higher = faster response)
 
     knob.addEventListener("mousedown", (event) => {
         isDragging = true;
@@ -404,18 +405,18 @@ document.querySelectorAll(".knob").forEach((knob) => {
     function rotateKnob(event) {
         if (!isDragging) return;
 
-        let deltaY = lastY - event.clientY; // Detect vertical movement
-        let deltaX = event.clientX - lastX; // Detect horizontal movement
+        let deltaY = lastY - event.clientY; // Vertical movement
+        let deltaX = event.clientX - lastX; // Horizontal movement
 
-        lastY = event.clientY; // Update last positions
+        lastY = event.clientY;
         lastX = event.clientX;
 
-        let changeAmount = (deltaY + deltaX) * 0.5; // Combine horizontal + vertical input
+        let changeAmount = (deltaY + deltaX) * sensitivity; // Adjusted for faster movement
         currentAngle = Math.max(-135, Math.min(135, currentAngle + changeAmount)); // Clamp rotation
 
         knob.style.transform = `rotate(${currentAngle}deg)`;
 
-        // Map to 0-20 range
+        // Map angle to 0-20 range
         let mappedValue = Math.round(((currentAngle + 135) / 270) * 20);
         mappedValue = Math.max(0, Math.min(20, mappedValue));
 
@@ -425,6 +426,17 @@ document.querySelectorAll(".knob").forEach((knob) => {
         }
     }
 });
+
+// Send values to RNBO
+function sendValueToRNBO(param, value) {
+    if (device && device.parametersById.has(param)) {
+        device.parametersById.get(param).value = value;
+        console.log(`🎛 Updated RNBO param: ${param} = ${value}`);
+    } else {
+        console.error(`❌ RNBO parameter ${param} not found!`);
+    }
+}
+
 
 // Send values to RNBO
 function sendValueToRNBO(param, value) {
