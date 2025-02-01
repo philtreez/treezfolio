@@ -495,7 +495,7 @@ function sendValueToRNBO(param, value) {
 }
 
 
-const buttonIDs = ["fwd", "bwd", "fbw", "rndm"];
+const buttonIDs = ["hello", "bwd", "fbw", "rndm"];
 
 buttonIDs.forEach(id => {
     const button = document.getElementById(id);
