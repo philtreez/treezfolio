@@ -468,11 +468,12 @@ document.addEventListener("DOMContentLoaded", function () {
     let isDragging = false;
 
     function updateRNBOParam(value) {
-        if (window.device && device.parametersById.get("dirx")) {
-            device.parametersById.get("dirx").value = value;
-            console.log(`📡 Sent dirx: ${value}`);
+        if (window.device && device.parametersById.has("dirx")) {
+            sendValueToRNBO("dirx", value); // ✅ Use the same function for consistency
+        } else {
+            console.error("❌ RNBO parameter 'dirx' not found!");
         }
-    }
+    }    
 
     function moveThumb(value) {
         let pos = value * stepSize;
@@ -485,7 +486,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let newValue = Math.round(clickX / stepSize);
         newValue = Math.max(0, Math.min(3, newValue)); // Keep within bounds
         moveThumb(newValue);
-        updateRNBOParam(newValue);
+        sendValueToRNBO("dirx", value);
     });
 
     // Dragging
@@ -500,7 +501,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let newValue = Math.round(moveX / stepSize);
         newValue = Math.max(0, Math.min(3, newValue));
         moveThumb(newValue);
-        updateRNBOParam(newValue);
+        sendValueToRNBO("dirx", value);
     });
 
     document.addEventListener("mouseup", () => {
