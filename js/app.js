@@ -360,6 +360,16 @@ setup().then(({ device }) => {
 });
 
 // Text zu Phoneme umwandeln mit lokalem Wörterbuch
+// Remove punctuation before looking up words in the dictionary
+function cleanText(text) {
+    return text
+        .toLowerCase()
+        .replace(/[.,!?*#()'"“”‘’—-]/g, '') // Remove punctuation
+        .replace(/\s+/g, ' ') // Normalize spaces
+        .trim();
+}
+
+// Text zu Phoneme umwandeln mit lokalem Wörterbuch
 async function textToSpeechParams(text) {
     try {
         const dictionary = await loadDictionary() || phonemeDictionary;
@@ -368,32 +378,28 @@ async function textToSpeechParams(text) {
             return [];
         }
 
-        const words = text.toLowerCase().split(/\s+/);
+        const cleanedText = cleanText(text); // ✨ Sanitize text
+        const words = cleanedText.split(/\s+/);
         let speechParams = [];
 
         words.forEach(word => {
-            if (dictionary[word]) { 
-                let phonemes = dictionary[word];
-
-                // 🔥 **Fix: Ensure phonemes is an array (split only if necessary)**
-                if (typeof phonemes === "string") {
-                    phonemes = phonemes.split(/\s+/); // Convert to array
-                }
-
+            if (dictionary[word]) { // Wörterbuch nutzen
+                let phonemes = dictionary[word].split(" ");
                 console.log(`🗣 Wort "${word}" → Phoneme (vor Cleanup):`, phonemes);
 
                 phonemes.forEach(ph => {
-                    let cleanedPhoneme = cleanPhoneme(ph);
+                    let cleanedPhoneme = cleanPhoneme(ph); // Entferne den Stress-Index
                     let speechValue = Object.keys(phonemeMap).find(key => phonemeMap[key] === cleanedPhoneme);
-                    
                     if (speechValue !== undefined) {
                         speechParams.push(parseInt(speechValue));
                     } else {
                         console.warn(`⚠️ Unbekanntes Phonem: ${cleanedPhoneme}`);
+                        speechParams.push(0);
                     }
                 });
             } else {
                 console.warn(`⚠️ Unbekanntes Wort: ${word} → Wörterbuch enthält es nicht!`);
+                speechParams.push(0);
             }
         });
 
@@ -405,6 +411,7 @@ async function textToSpeechParams(text) {
         return [];
     }
 }
+
 
 function sendTextToRNBO(device, text, context, isChat = true) {
     if (!device) {
