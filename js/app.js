@@ -242,6 +242,8 @@ let device; // Global RNBO device variable
 
 async function setup() {
     const patchExportURL = "https://treezfolio-philtreezs-projects.vercel.app/export/patch.export.json";
+    const dependenciesURL = "https://treezfolio-philtreezs-projects.vercel.app/export/dependencies.json"; // ✅ For buffer loading
+
     const WAContext = window.AudioContext || window.webkitAudioContext;
     const context = new WAContext();
 
@@ -269,7 +271,8 @@ async function setup() {
         device.node.connect(outputNode);
         console.log("✅ RNBO WebAudio erfolgreich initialisiert!");
 
-        setupOscilloscope(context, device, outputNode); // ✅ Add Oscilloscope Here
+        setupOscilloscope(context, device, outputNode); // ✅ Oscilloscope for visualization
+        await loadBuffers(device, dependenciesURL); // ✅ Load Buffers from dependencies
 
     } catch (err) {
         console.error("❌ Fehler beim Erstellen des RNBO-Geräts:", err);
@@ -282,23 +285,19 @@ async function setup() {
     return { device, context };
 }
 
+
 function setupOscilloscope(context, device, outputNode) {
     const analyserNode = context.createAnalyser();
-    analyserNode.fftSize = 2048; // Higher = smoother, but more CPU usage
+    analyserNode.fftSize = 2048; // Resolution of Oscilloscope
     const bufferLength = analyserNode.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
 
-    device.node.connect(analyserNode); // ✅ Connect RNBO to Analyser
-    analyserNode.connect(outputNode); // ✅ Connect Analyser to Output
+    device.node.connect(analyserNode); // Connect RNBO device to analyser
+    analyserNode.connect(outputNode);
 
     const oscilloscopeCanvas = document.getElementById('oscilloscope');
-    if (!oscilloscopeCanvas) {
-        console.error("❌ Oscilloscope canvas not found!");
-        return;
-    }
-    
     oscilloscopeCanvas.width = oscilloscopeCanvas.offsetWidth;
-    oscilloscopeCanvas.height = 65;
+    oscilloscopeCanvas.height = 230;
     const oscilloscopeContext = oscilloscopeCanvas.getContext("2d");
 
     function drawOscilloscope() {
@@ -306,8 +305,8 @@ function setupOscilloscope(context, device, outputNode) {
         analyserNode.getByteTimeDomainData(dataArray);
 
         oscilloscopeContext.clearRect(0, 0, oscilloscopeCanvas.width, oscilloscopeCanvas.height);
-        oscilloscopeContext.lineWidth = 3;
-        oscilloscopeContext.strokeStyle = "rgb(0, 255, 130)"; // Green waveform
+        oscilloscopeContext.lineWidth = 4;
+        oscilloscopeContext.strokeStyle = "rgb(0, 255, 130)"; // Oscilloscope color
         oscilloscopeContext.beginPath();
 
         const sliceWidth = oscilloscopeCanvas.width / bufferLength;
@@ -330,8 +329,31 @@ function setupOscilloscope(context, device, outputNode) {
         oscilloscopeContext.stroke();
     }
 
-    drawOscilloscope(); // Start rendering
+    drawOscilloscope();
 }
+
+async function loadBuffers(device, dependenciesURL) {
+    try {
+        console.log("📥 Lade Buffer aus:", dependenciesURL);
+        let dependencies = await fetch(dependenciesURL);
+        dependencies = await dependencies.json();
+
+        // Load all dependencies into the device
+        const results = await device.loadDataBufferDependencies(dependencies);
+
+        results.forEach(result => {
+            if (result.type === "success") {
+                console.log(`✅ Buffer geladen: ${result.id}`);
+            } else {
+                console.error(`❌ Fehler beim Laden von ${result.id}: ${result.error}`);
+            }
+        });
+
+    } catch (err) {
+        console.error("❌ Fehler beim Laden der Buffer:", err);
+    }
+}
+
 
 // Text zu Phoneme umwandeln mit lokalem Wörterbuch
 async function textToSpeechParams(text) {
