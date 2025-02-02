@@ -408,10 +408,10 @@ async function sendTextToRNBO(device, text, context, isChat = true) {
         return;
     }
 
-    const speechParam = device.parametersById?.get("speech");
-    if (!speechParam) {
-        console.error("❌ RNBO-Parameter 'speech' not found! Checking again...");
-        setTimeout(() => sendTextToRNBO(device, text, isChat), 500);
+    const ttsInport = device.messageInportsById.get("tts");
+    if (!ttsInport) {
+        console.error("❌ RNBO Inport 'tts' not found! Checking again...");
+        setTimeout(() => sendTextToRNBO(device, text, context, isChat), 500);
         return;
     }
 
@@ -420,12 +420,10 @@ async function sendTextToRNBO(device, text, context, isChat = true) {
     const phonemes = await textToSpeechParams(text);
     console.log(`🗣 Generierte Phoneme für "${text}":`, phonemes);
 
-    phonemes.forEach((speechValue, index) => {
-        setTimeout(() => {
-            console.log(`🎛 Setze RNBO-Parameter: speech = ${speechValue}`);
-            speechParam.value = speechValue;
-        }, index * 200);
-    });
+    // Send full list as a message to RNBO Inport "tts"
+    ttsInport.message(phonemes);
+
+    console.log(`📡 Gesendet an RNBO Inport 'tts':`, phonemes);
 }
 
 function setupChatbotWithTTS(device, context) {
