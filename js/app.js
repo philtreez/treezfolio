@@ -603,31 +603,48 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-    const textInput = document.getElementById("chat-input"); // Replace with your actual input field ID
-    const sendButton = document.getElementById("send-button"); // Replace with your actual send button ID
+    const textInput = document.querySelector(".user-text"); // Select input field
+    const sendButton = document.querySelector(".send-button"); // Select send button
 
-    // Select all keyboard key divs
-    const keys = document.querySelectorAll("[data-key]");
+    if (!textInput || !sendButton) {
+        console.error("❌ Input field or Send button not found! Check class names.");
+        return;
+    }
 
-    keys.forEach((key) => {
-        key.addEventListener("click", (event) => {
-            event.stopPropagation(); // Prevent unwanted event bubbling
-            
-            const keyText = key.getAttribute("data-key"); // Read the assigned key value
+    // List of all letters and special keys
+    const keys = "qwertzuiopasdfghjklyxcvbnm"; // Add missing characters if needed
 
-            if (keyText === "ENTER") {
-                sendButton.click(); // Simulate pressing the send button
-            } else {
-                textInput.value += keyText; // Append character to the text field
-            }
-        });
+    // Attach event listeners to each key based on class name
+    keys.split("").forEach((letter) => {
+        const keyElement = document.querySelector(`.${letter}`);
+        if (keyElement) {
+            keyElement.addEventListener("click", () => {
+                textInput.innerText += letter.toUpperCase(); // Add the pressed letter
+            });
+        }
     });
 
-    // Optional: Handle physical keyboard inputs as well
+    // Handle spacebar
+    const spaceKey = document.querySelector(".leer"); // Assuming "leer" is for space
+    if (spaceKey) {
+        spaceKey.addEventListener("click", () => {
+            textInput.innerText += " ";
+        });
+    }
+
+    // Handle enter key
+    const enterKey = document.querySelector(".ent"); // Assuming "ent" is for enter
+    if (enterKey) {
+        enterKey.addEventListener("click", () => {
+            sendButton.click(); // Simulate sending the message
+        });
+    }
+
+    // Optional: Handle physical keyboard input
     textInput.addEventListener("keypress", (event) => {
         if (event.key === "Enter") {
             sendButton.click();
-            event.preventDefault(); // Prevent new lines in input
+            event.preventDefault();
         }
     });
 });
