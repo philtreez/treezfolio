@@ -403,27 +403,36 @@ async function textToSpeechParams(text) {
 
 async function sendTextToRNBO(device, text, context, isChat = true) {
     if (!device) {
-        console.error("❌ RNBO nicht initialisiert! Verzögerung...");
+        console.error("❌ RNBO not initialized! Retrying...");
+        setTimeout(() => sendTextToRNBO(device, text, context, isChat), 500);
+        return;
+    }
+
+    // Debugging: Check available inports
+    console.log("🔍 Available RNBO inports:", device.messageInportsById);
+
+    if (!device.messageInportsById || !device.messageInportsById.get) {
+        console.error("❌ RNBO messageInportsById is undefined! Retrying...");
         setTimeout(() => sendTextToRNBO(device, text, context, isChat), 500);
         return;
     }
 
     const ttsInport = device.messageInportsById.get("tts");
     if (!ttsInport) {
-        console.error("❌ RNBO Inport 'tts' not found! Checking again...");
+        console.error("❌ RNBO Inport 'tts' not found! Retrying...");
         setTimeout(() => sendTextToRNBO(device, text, context, isChat), 500);
         return;
     }
 
-    console.log(isChat ? `💬 Chatbot-Antwort zu TTS: ${text}` : `📢 Sende Text zu RNBO: ${text}`);
+    console.log(isChat ? `💬 Chatbot Response to TTS: ${text}` : `📢 Sending Text to RNBO: ${text}`);
 
     const phonemes = await textToSpeechParams(text);
-    console.log(`🗣 Generierte Phoneme für "${text}":`, phonemes);
+    console.log(`🗣 Generated Phonemes for "${text}":`, phonemes);
 
     // Send full list as a message to RNBO Inport "tts"
     ttsInport.message(phonemes);
 
-    console.log(`📡 Gesendet an RNBO Inport 'tts':`, phonemes);
+    console.log(`📡 Sent to RNBO Inport 'tts':`, phonemes);
 }
 
 function setupChatbotWithTTS(device, context) {
