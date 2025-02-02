@@ -602,6 +602,32 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
+document.addEventListener("DOMContentLoaded", function () {
+    const inputField = document.querySelector(".user-text"); // Adjust if needed
+    const sendButton = document.querySelector(".send-button"); // Adjust if needed
+
+    // List of keys
+    const keys = document.querySelectorAll("[class^='q'], [class^='w'], [class^='e'], [class^='r'], [class^='t'], [class^='z'], [class^='u'], [class^='i'], [class^='o'], [class^='p'], [class^='a'], [class^='s'], [class^='d'], [class^='f'], [class^='g'], [class^='h'], [class^='j'], [class^='k'], [class^='l'], [class^='y'], [class^='x'], [class^='c'], [class^='v'], [class^='b'], [class^='n'], [class^='m']");
+
+    // Loop through all keys and add event listener
+    keys.forEach((key) => {
+        key.addEventListener("click", function () {
+            const letter = key.classList[0]; // Get the class name (e.g., "q", "w")
+            inputField.innerText += letter; // Add letter to input field
+        });
+    });
+
+    // Space key
+    document.querySelector(".leer").addEventListener("click", function () {
+        inputField.innerText += " "; // Add space
+    });
+
+    // Enter key
+    document.querySelector(".ent").addEventListener("click", function () {
+        sendButton.click(); // Simulate pressing "Send"
+    });
+});
+
 let lastValue = null; // Speichert den letzten Wert
 
 function attachOutports(device) {
