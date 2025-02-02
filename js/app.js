@@ -408,24 +408,37 @@ async function sendTextToRNBO(device, text, context, isChat = true) {
         return;
     }
 
+    const speechParam = device.parametersById?.get("speech");
+    if (!speechParam) {
+        console.error("❌ RNBO Parameter 'speech' not found! Retrying...");
+        setTimeout(() => sendTextToRNBO(device, text, context, isChat), 500);
+        return;
+    }
+
     console.log(isChat ? `💬 Chatbot Response to TTS: ${text}` : `📢 Sending Text to RNBO: ${text}`);
 
     const phonemes = await textToSpeechParams(text);
     console.log(`🗣 Generated Phonemes for "${text}":`, phonemes);
 
-    // Ensure `tts` inport exists
-    if (!device.messageEvent) {
-        console.error("❌ RNBO does not support message events! Retrying...");
-        setTimeout(() => sendTextToRNBO(device, text, context, isChat), 500);
-        return;
-    }
-
-    // Send list of phoneme numbers as a scheduled event to "tts" inport
-    const { TimeNow, MessageEvent } = RNBO;
-    const event = new MessageEvent(TimeNow(context), "tts", phonemes);
+    const vowels = new Set(["AA", "AE", "AH", "AO", "AW", "AX", "AXR", "AY", 
+                            "EH", "ER", "EY", "IH", "IX", "IY", "OW", "OY",
+                            "UH", "UW", "UX"]);
     
-    device.scheduleEvent(event);
-    console.log(`📡 Sent to RNBO Inport 'tts':`, phonemes);
+    let currentTime = 0;
+    phonemes.forEach((speechValue, index) => {
+        const phoneme = phonemeMap[speechValue]; // Get phoneme name
+        const isVowel = vowels.has(phoneme);
+
+        // Set duration: longer for vowels, shorter for consonants
+        const duration = isVowel ? 250 : 120; // Vowels: 250ms, Consonants: 120ms
+        
+        setTimeout(() => {
+            console.log(`🎛 Setting RNBO Parameter: speech = ${speechValue} (${phoneme})`);
+            speechParam.value = speechValue;
+        }, currentTime);
+
+        currentTime += duration;
+    });
 }
 
 function setupChatbotWithTTS(device, context) {
