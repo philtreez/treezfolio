@@ -397,7 +397,7 @@ async function textToSpeechParams(text) {
         const words = text.toLowerCase().split(/\s+/);
         let speechParams = [];
 
-        words.forEach((word, wordIndex) => {
+        words.forEach((word, index) => {
             let cleanedWord = cleanWord(word);
             let normalizedWord = normalizeContractions(cleanedWord);
 
@@ -416,9 +416,9 @@ async function textToSpeechParams(text) {
                     }
                 });
 
-                // **✅ Add pause only after a full word**
-                if (wordIndex < words.length - 1) {
-                    speechParams.push(0); // Add pause (0) after word
+                // ✅ **Immediately add a pause after each word (except last word)**
+                if (index < words.length - 1) {
+                    speechParams.push(0);
                 }
             } else {
                 console.warn(`⚠️ Unbekanntes Wort: ${word} → Wörterbuch enthält es nicht!`);
