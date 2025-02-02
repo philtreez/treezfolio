@@ -203,24 +203,29 @@ class TrashyChatbot {
     }
 
     getMarkovResponse(input) {
+        // Remove symbols (keep only letters, numbers, and spaces)
+        let sanitizedInput = input.replace(/[^a-zA-Z0-9\s]/g, "").toLowerCase();
+    
         if (this.memory.length === 0) {
-            this.memory.push(input);
+            this.memory.push(sanitizedInput);
             return this.introduction[Math.floor(Math.random() * this.introduction.length)];
         }
-
+    
         if (this.memory.length === 1) {
-            this.memory.push(input);
+            this.memory.push(sanitizedInput);
             return this.smallTalk[Math.floor(Math.random() * this.smallTalk.length)];
         }
-
-        const words = input.toLowerCase().split(/\s+/);
+    
+        const words = sanitizedInput.split(/\s+/); // Split input into words
         for (let word of words) {
             if (this.markovChains[word]) {
                 return this.markovChains[word][Math.floor(Math.random() * this.markovChains[word].length)];
             }
         }
+    
         return this.defaultResponses[Math.floor(Math.random() * this.defaultResponses.length)];
     }
+    
 }
 
 let device; // Global RNBO device variable
@@ -528,7 +533,7 @@ function sendValueToRNBO(param, value) {
     }
 }
 
-const buttonIDs = ["hello", "bwd", "fbw", "rndm"];
+const buttonIDs = ["hello", "play", "fbw", "rndm"];
 
 buttonIDs.forEach(id => {
     const button = document.getElementById(id);
