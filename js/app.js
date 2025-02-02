@@ -361,7 +361,6 @@ setup().then(({ device }) => {
 // Text zu Phoneme umwandeln mit lokalem Wörterbuch
 async function textToSpeechParams(text) {
     try {
-        // In textToSpeechParams()
         const dictionary = await loadDictionary() || phonemeDictionary;
         if (!dictionary) {
             console.error("❌ Wörterbuch ist leer!");
@@ -372,23 +371,24 @@ async function textToSpeechParams(text) {
         let speechParams = [];
 
         words.forEach(word => {
-            if (dictionary[word]) { // Wörterbuch nutzen
-                let phonemes = dictionary[word].split(" ");
+            if (dictionary[word]) { // Use dictionary if word exists
+                let phonemes = dictionary[word]; // Dictionary already stores phonemes as an array
                 console.log(`🗣 Wort "${word}" → Phoneme (vor Cleanup):`, phonemes);
 
                 phonemes.forEach(ph => {
-                    let cleanedPhoneme = cleanPhoneme(ph); // Entferne den Stress-Index
+                    let cleanedPhoneme = cleanPhoneme(ph); // Remove stress index
                     let speechValue = Object.keys(phonemeMap).find(key => phonemeMap[key] === cleanedPhoneme);
+
                     if (speechValue !== undefined) {
                         speechParams.push(parseInt(speechValue));
                     } else {
                         console.warn(`⚠️ Unbekanntes Phonem: ${cleanedPhoneme}`);
-                        speechParams.push(0);
+                        // Instead of pushing 0, let's log an issue and skip it
                     }
                 });
             } else {
                 console.warn(`⚠️ Unbekanntes Wort: ${word} → Wörterbuch enthält es nicht!`);
-                speechParams.push(0);
+                // Don't push unnecessary 0s; just continue
             }
         });
 
@@ -400,6 +400,7 @@ async function textToSpeechParams(text) {
         return [];
     }
 }
+
 
 async function sendTextToRNBO(device, text, context, isChat = true) {
     if (!device) {
@@ -418,14 +419,22 @@ async function sendTextToRNBO(device, text, context, isChat = true) {
     console.log(isChat ? `💬 Chatbot Response to TTS: ${text}` : `📢 Sending Text to RNBO: ${text}`);
 
     const phonemes = await textToSpeechParams(text);
-    console.log(`🗣 Generated Phonemes for "${text}":`, phonemes);
+    
+    if (phonemes.length === 0) {
+        console.error("⚠️ Keine gültigen Phoneme generiert!");
+        return;
+    }
+
+    console.log(`🗣 Generierte Phoneme für "${text}":`, phonemes);
 
     const vowels = new Set(["AA", "AE", "AH", "AO", "AW", "AX", "AXR", "AY", 
                             "EH", "ER", "EY", "IH", "IX", "IY", "OW", "OY",
                             "UH", "UW", "UX"]);
-    
+
     let currentTime = 0;
     phonemes.forEach((speechValue, index) => {
+        if (speechValue === 0) return; // Skip sending unnecessary silence
+
         const phoneme = phonemeMap[speechValue]; // Get phoneme name
         const isVowel = vowels.has(phoneme);
 
@@ -439,6 +448,11 @@ async function sendTextToRNBO(device, text, context, isChat = true) {
 
         currentTime += duration;
     });
+
+    // Ensure a small silence at the end to avoid overlapping speech
+    setTimeout(() => {
+        speechParam.value = 0;
+    }, currentTime + 100);
 }
 
 function setupChatbotWithTTS(device, context) {
