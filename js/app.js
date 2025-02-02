@@ -223,6 +223,21 @@ class TrashyChatbot {
     }
 }
 
+// Load the exported dependencies.json file
+let dependencies = await fetch("dependencies.json");
+dependencies = await dependencies.json();
+
+// Load the dependencies into the device
+const results = await device.loadDataBufferDependencies(dependencies);
+results.forEach(result => {
+    if (result.type === "success") {
+        console.log(`Successfully loaded buffer with id ${result.id}`);
+    } else {
+        console.log(`Failed to load buffer with id ${result.id}, ${result.error}`);
+    }
+});
+
+
 let device; // Global RNBO device variable
 
 async function setup() {
@@ -266,20 +281,6 @@ async function setup() {
 
     return { device, context };
 }
-
-// Load the exported dependencies.json file
-let dependencies = await fetch("dependencies.json");
-dependencies = await dependencies.json();
-
-// Load the dependencies into the device
-const results = await device.loadDataBufferDependencies(dependencies);
-results.forEach(result => {
-    if (result.type === "success") {
-        console.log(`Successfully loaded buffer with id ${result.id}`);
-    } else {
-        console.log(`Failed to load buffer with id ${result.id}, ${result.error}`);
-    }
-});
 
 function setupOscilloscope(context, device, outputNode) {
     const analyserNode = context.createAnalyser();
