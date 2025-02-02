@@ -424,7 +424,7 @@ async function sendTextToRNBO(device, text, context, isChat = true) {
         setTimeout(() => {
             console.log(`🎛 Setze RNBO-Parameter: speech = ${speechValue}`);
             speechParam.value = speechValue;
-        }, index * 150);
+        }, index * 100);
     });
 }
 
