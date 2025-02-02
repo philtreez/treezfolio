@@ -400,7 +400,7 @@ async function textToSpeechParams(text) {
         words.forEach((word, index) => {
             let cleanedWord = cleanWord(word);
             let normalizedWord = normalizeContractions(cleanedWord);
-
+            
             if (dictionary[normalizedWord]) {
                 let phonemes = dictionary[normalizedWord].split(" ");
                 console.log(`🗣 Wort "${word}" → Phoneme:`, phonemes);
@@ -416,17 +416,19 @@ async function textToSpeechParams(text) {
                     }
                 });
 
-                // ✅ **Immediately add a pause after each word (except last word)**
+                // ✅ **Immediately add a pause after each word**
                 if (index < words.length - 1) {
                     speechParams.push(0);
+                    console.log(`⏸ Pause (0) added after word: ${word}`);
                 }
             } else {
                 console.warn(`⚠️ Unbekanntes Wort: ${word} → Wörterbuch enthält es nicht!`);
                 speechParams.push(0);
+                console.log(`⏸ Pause (0) added for unknown word: ${word}`);
             }
         });
 
-        console.log("🔡 Generierte Speech-Werte:", speechParams);
+        console.log("🔡 Final Speech-Werte (Phonemes + Pauses):", speechParams);
         return speechParams;
     } catch (err) {
         console.error("❌ Fehler bei der Umwandlung von Text zu Phonemen:", err);
@@ -434,37 +436,34 @@ async function textToSpeechParams(text) {
     }
 }
 
-async function sendTextToRNBO(device, text, context, isChat = true) {
+async function sendTextToRNBO(device, text, context) {
     if (!device) {
         console.error("❌ RNBO nicht initialisiert! Verzögerung...");
-        setTimeout(() => sendTextToRNBO(device, text, context, isChat), 500);
+        setTimeout(() => sendTextToRNBO(device, text, context), 500);
         return;
     }
 
     const speechParam = device.parametersById?.get("speech");
     if (!speechParam) {
-        console.error("❌ RNBO-Parameter 'speech' nicht gefunden!");
+        console.error("❌ RNBO-Parameter 'speech' not found! Checking again...");
+        setTimeout(() => sendTextToRNBO(device, text, isChat), 500);
         return;
     }
 
-    console.log(isChat ? `💬 Chatbot-Antwort zu TTS: ${text}` : `📢 Sende Text zu RNBO: ${text}`);
+    console.log(`📢 Sende Text zu RNBO: ${text}`);
 
     const phonemes = await textToSpeechParams(text);
-    console.log(`🗣 Generierte Phoneme für "${text}":`, phonemes);
+    console.log(`🗣 Final Phoneme Sequence Sent to RNBO:`, phonemes);
 
-    // **Set different times for vowels and consonants**
-    const vowelTime = 180; // Duration for vowels
-    const consonantTime = 100; // Duration for consonants
-    const wordPause = 300; // Pause after words
-
+    let timeOffset = 0;
     phonemes.forEach((speechValue, index) => {
-        let delay = (index > 0 && phonemes[index - 1] === 0) ? wordPause : 
-                    (isVowel(speechValue) ? vowelTime : consonantTime);
-        
+        let delay = speechValue === 0 ? 300 : 150; // ⏸ Pause longer (300ms), normal phonemes (150ms)
+        timeOffset += delay;
+
         setTimeout(() => {
-            console.log(`🎛 Setze RNBO-Parameter: speech = ${speechValue}`);
+            console.log(`🎛 Setze RNBO-Parameter: speech = ${speechValue} (Delay: ${delay}ms)`);
             speechParam.value = speechValue;
-        }, index * delay);
+        }, timeOffset);
     });
 }
 
