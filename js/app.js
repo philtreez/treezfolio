@@ -378,17 +378,16 @@ async function textToSpeechParams(text) {
             return [];
         }
 
-        const cleanedText = cleanText(text); // ✨ Sanitize text
-        const words = cleanedText.split(/\s+/);
+        const words = text.toLowerCase().split(/\s+/);
         let speechParams = [];
 
-        words.forEach(word => {
-            if (dictionary[word]) { // Wörterbuch nutzen
+        words.forEach((word, wordIndex) => {
+            if (dictionary[word]) {
                 let phonemes = dictionary[word].split(" ");
                 console.log(`🗣 Wort "${word}" → Phoneme (vor Cleanup):`, phonemes);
 
                 phonemes.forEach(ph => {
-                    let cleanedPhoneme = cleanPhoneme(ph); // Entferne den Stress-Index
+                    let cleanedPhoneme = cleanPhoneme(ph);
                     let speechValue = Object.keys(phonemeMap).find(key => phonemeMap[key] === cleanedPhoneme);
                     if (speechValue !== undefined) {
                         speechParams.push(parseInt(speechValue));
@@ -397,6 +396,11 @@ async function textToSpeechParams(text) {
                         speechParams.push(0);
                     }
                 });
+
+                // **✅ Add pause only after a full word**
+                if (wordIndex < words.length - 1) {
+                    speechParams.push(0); // Add pause (0) after word
+                }
             } else {
                 console.warn(`⚠️ Unbekanntes Wort: ${word} → Wörterbuch enthält es nicht!`);
                 speechParams.push(0);
@@ -405,13 +409,11 @@ async function textToSpeechParams(text) {
 
         console.log("🔡 Generierte Speech-Werte:", speechParams);
         return speechParams;
-
     } catch (err) {
         console.error("❌ Fehler bei der Umwandlung von Text zu Phonemen:", err);
         return [];
     }
 }
-
 
 async function sendTextToRNBO(device, text, context, isChat = true) {
     if (!device) {
@@ -422,8 +424,7 @@ async function sendTextToRNBO(device, text, context, isChat = true) {
 
     const speechParam = device.parametersById?.get("speech");
     if (!speechParam) {
-        console.error("❌ RNBO-Parameter 'speech' not found! Checking again...");
-        setTimeout(() => sendTextToRNBO(device, text, isChat), 500);
+        console.error("❌ RNBO-Parameter 'speech' nicht gefunden!");
         return;
     }
 
@@ -432,33 +433,27 @@ async function sendTextToRNBO(device, text, context, isChat = true) {
     const phonemes = await textToSpeechParams(text);
     console.log(`🗣 Generierte Phoneme für "${text}":`, phonemes);
 
-    let delay = 0;
-    
+    // **Set different times for vowels and consonants**
+    const vowelTime = 180; // Duration for vowels
+    const consonantTime = 100; // Duration for consonants
+    const wordPause = 300; // Pause after words
+
     phonemes.forEach((speechValue, index) => {
-        let duration = 70; // Default for consonants
-
-        if ([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].includes(speechValue)) {
-            duration = 100; // Vowels
-        }
-
+        let delay = (index > 0 && phonemes[index - 1] === 0) ? wordPause : 
+                    (isVowel(speechValue) ? vowelTime : consonantTime);
+        
         setTimeout(() => {
             console.log(`🎛 Setze RNBO-Parameter: speech = ${speechValue}`);
             speechParam.value = speechValue;
-        }, delay);
-
-        delay += duration; // Increment time
-
-        // Add PAUSE (0) after each phoneme except last
-        if (index < phonemes.length - 1) {
-            setTimeout(() => {
-                console.log(`⏸ Setze Pause: speech = 0`);
-                speechParam.value = 0;
-            }, delay);
-            delay += 300; // Pause duration
-        }
+        }, index * delay);
     });
 }
 
+// **Helper function to check if phoneme is a vowel**
+function isVowel(phonemeValue) {
+    const vowels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+    return vowels.includes(phonemeValue);
+}
 
 function setupChatbotWithTTS(device, context) {
     const chatbot = new TrashyChatbot();
