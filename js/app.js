@@ -359,17 +359,33 @@ setup().then(({ device }) => {
     }
 });
 
-// Text zu Phoneme umwandeln mit lokalem Wörterbuch
-// Remove punctuation before looking up words in the dictionary
-function cleanText(text) {
-    return text
-        .toLowerCase()
-        .replace(/[.,!?*#()'"“”‘’—-]/g, '') // Remove punctuation
-        .replace(/\s+/g, ' ') // Normalize spaces
-        .trim();
+function cleanWord(word) {
+    return word.replace(/[^a-zA-Z0-9']/g, "").toLowerCase(); // Remove punctuation
 }
 
-// Text zu Phoneme umwandeln mit lokalem Wörterbuch
+function normalizeContractions(word) {
+    const contractions = {
+        "i’m": "i am",
+        "you’re": "you are",
+        "he’s": "he is",
+        "she’s": "she is",
+        "it’s": "it is",
+        "we’re": "we are",
+        "they’re": "they are",
+        "that’s": "that is",
+        "there’s": "there is",
+        "let’s": "let us",
+        "won’t": "will not",
+        "can’t": "cannot",
+        "don’t": "do not",
+        "doesn’t": "does not",
+        "didn’t": "did not",
+        "isn’t": "is not",
+        "aren’t": "are not"
+    };
+    return contractions[word] || word;
+}
+
 async function textToSpeechParams(text) {
     try {
         const dictionary = await loadDictionary() || phonemeDictionary;
@@ -382,9 +398,12 @@ async function textToSpeechParams(text) {
         let speechParams = [];
 
         words.forEach((word, wordIndex) => {
-            if (dictionary[word]) {
-                let phonemes = dictionary[word].split(" ");
-                console.log(`🗣 Wort "${word}" → Phoneme (vor Cleanup):`, phonemes);
+            let cleanedWord = cleanWord(word);
+            let normalizedWord = normalizeContractions(cleanedWord);
+
+            if (dictionary[normalizedWord]) {
+                let phonemes = dictionary[normalizedWord].split(" ");
+                console.log(`🗣 Wort "${word}" → Phoneme:`, phonemes);
 
                 phonemes.forEach(ph => {
                     let cleanedPhoneme = cleanPhoneme(ph);
