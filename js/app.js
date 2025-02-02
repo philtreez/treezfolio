@@ -49,7 +49,7 @@ const phonemeDictionary = {
 class TrashyChatbot {
     constructor() {
         this.memory = [];
-        this.name = "RoboPhil"; // Assistant's name
+        this.name = "Robo Phil"; // Assistant's name
         this.introduction = [
             `Hi, I’m ${this.name}, your assistant. Philipp is busy with *very important* things, so I’m in charge now!`,
             `Hello, I’m ${this.name}. Philipp told me to handle things while he works on *groundbreaking* projects. So... hi!`,
