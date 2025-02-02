@@ -382,12 +382,12 @@ function normalizeContractions(word) {
         "didn’t": "did not",
         "isn’t": "is not",
         "aren’t": "are not",
-        "that's": "that is",
-        "Philipp's": "Philipp",
-        "let's": "let us",
-        "what's": "whats is",
-        "how's": "how is",
-        "haven't": "have not"
+        "that’s": "that is",
+        "Philipp’s": "Philipp",
+        "let’s": "let us",
+        "what’s": "whats is",
+        "how’s": "how is",
+        "haven’t": "have not"
     };
     return contractions[word] || word;
 }
