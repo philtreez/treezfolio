@@ -413,7 +413,7 @@ async function textToSpeechParams(text) {
 }
 
 
-function sendTextToRNBO(device, text, context, isChat = true) {
+async function sendTextToRNBO(device, text, context, isChat = true) {
     if (!device) {
         console.error("❌ RNBO nicht initialisiert! Verzögerung...");
         setTimeout(() => sendTextToRNBO(device, text, context, isChat), 500);
@@ -423,43 +423,39 @@ function sendTextToRNBO(device, text, context, isChat = true) {
     const speechParam = device.parametersById?.get("speech");
     if (!speechParam) {
         console.error("❌ RNBO-Parameter 'speech' not found! Checking again...");
-        setTimeout(() => sendTextToRNBO(device, text, context, isChat), 500);
+        setTimeout(() => sendTextToRNBO(device, text, isChat), 500);
         return;
     }
 
     console.log(isChat ? `💬 Chatbot-Antwort zu TTS: ${text}` : `📢 Sende Text zu RNBO: ${text}`);
 
-    textToSpeechParams(text).then(phonemes => {
-        console.log(`🗣 Generierte Phoneme für "${text}":`, phonemes);
+    const phonemes = await textToSpeechParams(text);
+    console.log(`🗣 Generierte Phoneme für "${text}":`, phonemes);
 
-        let delay = 0;
-        phonemes.forEach((speechValue, index) => {
-            const vowels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 19]; // Vowel sounds
-            const plosives = [20, 22, 25, 26, 30, 34]; // Stops (short sounds)
-            const fricatives = [23, 24, 32, 33, 35, 36, 37, 38, 48]; // Hissing sounds
-            const nasals = [28, 29, 51, 52]; // M, N, nasal
-            const pauses = [39, 40, 42, 43]; // Silences and non-speech
+    let delay = 0;
+    
+    phonemes.forEach((speechValue, index) => {
+        let duration = 70; // Default for consonants
 
-            let phonemeDelay;
-            if (vowels.includes(speechValue)) {
-                phonemeDelay = 100; // Vowels are longer
-            } else if (plosives.includes(speechValue)) {
-                phonemeDelay = 70; // Plosives are super short
-            } else if (fricatives.includes(speechValue)) {
-                phonemeDelay = 80; // Fricatives are slightly longer
-            } else if (nasals.includes(speechValue)) {
-                phonemeDelay = 100; // Nasals are smooth and slightly long
-            } else {
-                phonemeDelay = 400; // Pauses, unknowns, or silence
-            }
+        if ([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].includes(speechValue)) {
+            duration = 100; // Vowels
+        }
 
+        setTimeout(() => {
+            console.log(`🎛 Setze RNBO-Parameter: speech = ${speechValue}`);
+            speechParam.value = speechValue;
+        }, delay);
+
+        delay += duration; // Increment time
+
+        // Add PAUSE (0) after each phoneme except last
+        if (index < phonemes.length - 1) {
             setTimeout(() => {
-                console.log(`🎛 Setze RNBO-Parameter: speech = ${speechValue}`);
-                speechParam.value = speechValue;
+                console.log(`⏸ Setze Pause: speech = 0`);
+                speechParam.value = 0;
             }, delay);
-
-            delay += phonemeDelay;
-        });
+            delay += 300; // Pause duration
+        }
     });
 }
 
