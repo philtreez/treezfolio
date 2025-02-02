@@ -371,24 +371,28 @@ async function textToSpeechParams(text) {
         let speechParams = [];
 
         words.forEach(word => {
-            if (dictionary[word]) { // Use dictionary if word exists
-                let phonemes = dictionary[word]; // Dictionary already stores phonemes as an array
+            if (dictionary[word]) { 
+                let phonemes = dictionary[word];
+
+                // 🔥 **Fix: Ensure phonemes is an array (split only if necessary)**
+                if (typeof phonemes === "string") {
+                    phonemes = phonemes.split(/\s+/); // Convert to array
+                }
+
                 console.log(`🗣 Wort "${word}" → Phoneme (vor Cleanup):`, phonemes);
 
                 phonemes.forEach(ph => {
-                    let cleanedPhoneme = cleanPhoneme(ph); // Remove stress index
+                    let cleanedPhoneme = cleanPhoneme(ph);
                     let speechValue = Object.keys(phonemeMap).find(key => phonemeMap[key] === cleanedPhoneme);
-
+                    
                     if (speechValue !== undefined) {
                         speechParams.push(parseInt(speechValue));
                     } else {
                         console.warn(`⚠️ Unbekanntes Phonem: ${cleanedPhoneme}`);
-                        // Instead of pushing 0, let's log an issue and skip it
                     }
                 });
             } else {
                 console.warn(`⚠️ Unbekanntes Wort: ${word} → Wörterbuch enthält es nicht!`);
-                // Don't push unnecessary 0s; just continue
             }
         });
 
@@ -400,7 +404,6 @@ async function textToSpeechParams(text) {
         return [];
     }
 }
-
 
 async function sendTextToRNBO(device, text, context, isChat = true) {
     if (!device) {
