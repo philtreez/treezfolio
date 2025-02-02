@@ -442,13 +442,13 @@ function sendTextToRNBO(device, text, context, isChat = true) {
 
             let phonemeDelay;
             if (vowels.includes(speechValue)) {
-                phonemeDelay = 80; // Vowels are longer
+                phonemeDelay = 100; // Vowels are longer
             } else if (plosives.includes(speechValue)) {
-                phonemeDelay = 30; // Plosives are super short
+                phonemeDelay = 70; // Plosives are super short
             } else if (fricatives.includes(speechValue)) {
-                phonemeDelay = 40; // Fricatives are slightly longer
+                phonemeDelay = 80; // Fricatives are slightly longer
             } else if (nasals.includes(speechValue)) {
-                phonemeDelay = 70; // Nasals are smooth and slightly long
+                phonemeDelay = 100; // Nasals are smooth and slightly long
             } else {
                 phonemeDelay = 400; // Pauses, unknowns, or silence
             }
