@@ -446,7 +446,7 @@ async function sendTextToRNBO(device, text, context) {
     const speechParam = device.parametersById?.get("speech");
     if (!speechParam) {
         console.error("❌ RNBO-Parameter 'speech' not found! Checking again...");
-        setTimeout(() => sendTextToRNBO(device, text, isChat), 500);
+        setTimeout(() => sendTextToRNBO(device, text, context), 500);
         return;
     }
 
@@ -457,7 +457,7 @@ async function sendTextToRNBO(device, text, context) {
 
     let timeOffset = 0;
     phonemes.forEach((speechValue, index) => {
-        let delay = speechValue === 0 ? 200 : 150; // ⏸ Pause longer (300ms), normal phonemes (150ms)
+        let delay = speechValue === 0 ? 300 : 150; // ⏸ Pause longer (300ms), normal phonemes (150ms)
         timeOffset += delay;
 
         setTimeout(() => {
@@ -465,6 +465,13 @@ async function sendTextToRNBO(device, text, context) {
             speechParam.value = speechValue;
         }, timeOffset);
     });
+
+    // ✅ **Send 56 as a "finished" signal after the last phoneme**
+    timeOffset += 500; // Wait a bit after the last phoneme
+    setTimeout(() => {
+        console.log(`✅ Response finished! Sending 56 to RNBO.`);
+        speechParam.value = 56;
+    }, timeOffset);
 }
 
 // **Helper function to check if phoneme is a vowel**
