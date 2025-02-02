@@ -455,9 +455,23 @@ async function sendTextToRNBO(device, text, context) {
     const phonemes = await textToSpeechParams(text);
     console.log(`🗣 Final Phoneme Sequence Sent to RNBO:`, phonemes);
 
+    // Define durations
+    const vowelDuration = 200;
+    const consonantDuration = 100;
+    const pauseDuration = 300;
+
     let timeOffset = 0;
     phonemes.forEach((speechValue, index) => {
-        let delay = speechValue === 0 ? 300 : 150; // ⏸ Pause longer (300ms), normal phonemes (150ms)
+        let delay;
+        
+        if (speechValue === 0) {
+            delay = pauseDuration; // Long pause
+        } else if (isVowel(speechValue)) {
+            delay = vowelDuration; // Longer for vowels
+        } else {
+            delay = consonantDuration; // Shorter for consonants
+        }
+
         timeOffset += delay;
 
         setTimeout(() => {
@@ -474,10 +488,12 @@ async function sendTextToRNBO(device, text, context) {
     }, timeOffset);
 }
 
-// **Helper function to check if phoneme is a vowel**
-function isVowel(phonemeValue) {
-    const vowels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
-    return vowels.includes(phonemeValue);
+/**
+ * 🛠 Determines if a phoneme is a vowel based on the phonemeMap
+ */
+function isVowel(phonemeIndex) {
+    const vowels = [1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 19]; // Indices from phoneme table
+    return vowels.includes(phonemeIndex);
 }
 
 function setupChatbotWithTTS(device, context) {
