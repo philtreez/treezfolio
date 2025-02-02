@@ -286,7 +286,7 @@ function setupOscilloscope(context, device, outputNode) {
 
     const oscilloscopeCanvas = document.getElementById('oscilloscope');
     oscilloscopeCanvas.width = oscilloscopeCanvas.offsetWidth;
-    oscilloscopeCanvas.height = 230;
+    oscilloscopeCanvas.height = 63;
     const oscilloscopeContext = oscilloscopeCanvas.getContext("2d");
 
     function drawOscilloscope() {
@@ -294,7 +294,7 @@ function setupOscilloscope(context, device, outputNode) {
         analyserNode.getByteTimeDomainData(dataArray);
 
         oscilloscopeContext.clearRect(0, 0, oscilloscopeCanvas.width, oscilloscopeCanvas.height);
-        oscilloscopeContext.lineWidth = 4;
+        oscilloscopeContext.lineWidth = 2;
         oscilloscopeContext.strokeStyle = "rgb(0, 255, 130)"; // Oscilloscope color
         oscilloscopeContext.beginPath();
 
