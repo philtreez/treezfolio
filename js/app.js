@@ -19,15 +19,16 @@ function cleanPhoneme(phoneme) {
 }
 
 const phonemeMap = {
-    0: "",      // Kein Sound
+    0: "",       // No sound
     1: "AA",  2: "AE",  3: "AH",  4: "AO",  5: "AW",  6: "AX",  7: "AXR",  8: "AY",
     9: "EH",  10: "ER", 11: "EY", 12: "IH", 13: "IX", 14: "IY", 15: "OW", 16: "OY",
-    17: "UH", 18: "UW", 19: "UX", 
+    17: "UH", 18: "UW", 19: "UX",
     20: "B", 21: "CH", 22: "D", 23: "DH", 24: "F", 25: "G", 26: "K", 27: "L",
     28: "M", 29: "N", 30: "P", 31: "R", 32: "S", 33: "SH", 34: "T", 35: "TH",
-    36: "V", 37: "Z", 38: "ZH", 
-    39: "-", 40: "!", 41: "+", 42: "/", 43: "#", 
-    44: "Q", 45: "WH", 46: "NX", 47: "NG", 48: "HH", 49: "DX", 50: "EL", 51: "EM", 52: "EN", 53: "H", 54: "W", 55: "Y"
+    36: "V", 37: "Z", 38: "ZH",
+    39: "-", 40: "!", 41: "+", 42: "/", 43: "#",
+    44: "Q", 45: "WH", 46: "NX", 47: "NG", 48: "HH", 49: "DX", 50: "EL", 51: "EM",
+    52: "EN", 53: "H", 54: "W", 55: "Y"
 };
 
 const phonemeDictionary = {
@@ -405,58 +406,56 @@ async function textToSpeechParams(text) {
     }
 }
 
-async function sendTextToRNBO(device, text, context, isChat = true) {
+function sendTextToRNBO(device, text, context, isChat = true) {
     if (!device) {
-        console.error("❌ RNBO not initialized! Retrying...");
+        console.error("❌ RNBO nicht initialisiert! Verzögerung...");
         setTimeout(() => sendTextToRNBO(device, text, context, isChat), 500);
         return;
     }
 
     const speechParam = device.parametersById?.get("speech");
     if (!speechParam) {
-        console.error("❌ RNBO Parameter 'speech' not found! Retrying...");
+        console.error("❌ RNBO-Parameter 'speech' not found! Checking again...");
         setTimeout(() => sendTextToRNBO(device, text, context, isChat), 500);
         return;
     }
 
-    console.log(isChat ? `💬 Chatbot Response to TTS: ${text}` : `📢 Sending Text to RNBO: ${text}`);
+    console.log(isChat ? `💬 Chatbot-Antwort zu TTS: ${text}` : `📢 Sende Text zu RNBO: ${text}`);
 
-    const phonemes = await textToSpeechParams(text);
-    
-    if (phonemes.length === 0) {
-        console.error("⚠️ Keine gültigen Phoneme generiert!");
-        return;
-    }
+    textToSpeechParams(text).then(phonemes => {
+        console.log(`🗣 Generierte Phoneme für "${text}":`, phonemes);
 
-    console.log(`🗣 Generierte Phoneme für "${text}":`, phonemes);
+        let delay = 0;
+        phonemes.forEach((speechValue, index) => {
+            const vowels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 19]; // Vowel sounds
+            const plosives = [20, 22, 25, 26, 30, 34]; // Stops (short sounds)
+            const fricatives = [23, 24, 32, 33, 35, 36, 37, 38, 48]; // Hissing sounds
+            const nasals = [28, 29, 51, 52]; // M, N, nasal
+            const pauses = [39, 40, 42, 43]; // Silences and non-speech
 
-    const vowels = new Set(["AA", "AE", "AH", "AO", "AW", "AX", "AXR", "AY", 
-                            "EH", "ER", "EY", "IH", "IX", "IY", "OW", "OY",
-                            "UH", "UW", "UX"]);
+            let phonemeDelay;
+            if (vowels.includes(speechValue)) {
+                phonemeDelay = 300; // Vowels are longer
+            } else if (plosives.includes(speechValue)) {
+                phonemeDelay = 120; // Plosives are super short
+            } else if (fricatives.includes(speechValue)) {
+                phonemeDelay = 170; // Fricatives are slightly longer
+            } else if (nasals.includes(speechValue)) {
+                phonemeDelay = 250; // Nasals are smooth and slightly long
+            } else {
+                phonemeDelay = 400; // Pauses, unknowns, or silence
+            }
 
-    let currentTime = 0;
-    phonemes.forEach((speechValue, index) => {
-        if (speechValue === 0) return; // Skip sending unnecessary silence
+            setTimeout(() => {
+                console.log(`🎛 Setze RNBO-Parameter: speech = ${speechValue}`);
+                speechParam.value = speechValue;
+            }, delay);
 
-        const phoneme = phonemeMap[speechValue]; // Get phoneme name
-        const isVowel = vowels.has(phoneme);
-
-        // Set duration: longer for vowels, shorter for consonants
-        const duration = isVowel ? 250 : 120; // Vowels: 250ms, Consonants: 120ms
-        
-        setTimeout(() => {
-            console.log(`🎛 Setting RNBO Parameter: speech = ${speechValue} (${phoneme})`);
-            speechParam.value = speechValue;
-        }, currentTime);
-
-        currentTime += duration;
+            delay += phonemeDelay;
+        });
     });
-
-    // Ensure a small silence at the end to avoid overlapping speech
-    setTimeout(() => {
-        speechParam.value = 0;
-    }, currentTime + 100);
 }
+
 
 function setupChatbotWithTTS(device, context) {
     const chatbot = new TrashyChatbot();
