@@ -270,7 +270,6 @@ async function setup() {
     return { device, context };
 }
 
-
 function setupOscilloscope(context, device, outputNode) {
     const analyserNode = context.createAnalyser();
     analyserNode.fftSize = 2048; // Resolution of Oscilloscope
@@ -317,28 +316,42 @@ function setupOscilloscope(context, device, outputNode) {
     drawOscilloscope();
 }
 
-async function loadBuffers(device, dependenciesURL) {
+async function loadBuffers(device) {
     try {
-        console.log("📥 Lade Buffer aus:", dependenciesURL);
-        let dependencies = await fetch(dependenciesURL);
-        dependencies = await dependencies.json();
+        const baseURL = "https://treezfolio-philtreezs-projects.vercel.app/export/"; // ✅ Correct base URL
+        let response = await fetch(baseURL + "dependencies.json"); // ✅ Load dependencies.json
+        let dependencies = await response.json();
 
-        // Load all dependencies into the device
-        const results = await device.loadDataBufferDependencies(dependencies);
+        // Iterate through each buffer entry
+        for (const buffer of dependencies) {
+            const bufferID = buffer.id;
+            const fileURL = baseURL + buffer.file; // ✅ Prepend base URL
 
-        results.forEach(result => {
-            if (result.type === "success") {
-                console.log(`✅ Buffer geladen: ${result.id}`);
-            } else {
-                console.error(`❌ Fehler beim Laden von ${result.id}: ${result.error}`);
-            }
-        });
+            console.log(`🔄 Loading buffer: ${bufferID} from ${fileURL}`);
 
-    } catch (err) {
-        console.error("❌ Fehler beim Laden der Buffer:", err);
+            // Fetch the audio file as an ArrayBuffer
+            const fileResponse = await fetch(fileURL);
+            const arrayBuffer = await fileResponse.arrayBuffer();
+
+            // Decode the ArrayBuffer into an AudioBuffer
+            const audioBuffer = await device.context.decodeAudioData(arrayBuffer);
+
+            // Set the AudioBuffer to the corresponding RNBO buffer
+            await device.setDataBuffer(bufferID, audioBuffer);
+
+            console.log(`✅ Loaded buffer: ${bufferID}`);
+        }
+    } catch (error) {
+        console.error("❌ Fehler beim Laden der Buffer:", error);
     }
 }
 
+// ✅ Call this after RNBO device is created
+setup().then(({ device }) => {
+    if (device) {
+        loadBuffers(device);
+    }
+});
 
 // Text zu Phoneme umwandeln mit lokalem Wörterbuch
 async function textToSpeechParams(text) {
@@ -514,7 +527,6 @@ function sendValueToRNBO(param, value) {
         console.error(`❌ RNBO parameter ${param} not found!`);
     }
 }
-
 
 const buttonIDs = ["hello", "bwd", "fbw", "rndm"];
 
