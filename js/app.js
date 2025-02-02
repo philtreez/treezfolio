@@ -457,7 +457,7 @@ async function sendTextToRNBO(device, text, context) {
 
     let timeOffset = 0;
     phonemes.forEach((speechValue, index) => {
-        let delay = speechValue === 0 ? 300 : 150; // ⏸ Pause longer (300ms), normal phonemes (150ms)
+        let delay = speechValue === 0 ? 200 : 150; // ⏸ Pause longer (300ms), normal phonemes (150ms)
         timeOffset += delay;
 
         setTimeout(() => {
